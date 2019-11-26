@@ -1,0 +1,21 @@
+Article: Controlling the familywise error rate when performing
+multiple comparisons in a Linear Latent Variable Model
+
+Authors: Brice Ozenne, Esben Budtz-J\o{}rgensen, Sebastian Elgaard Ebert.
+
+Author responsible for writing the code: Brice Ozenne.
+
+E-mail of the author maintaining the code: brice.ozenne@nru.dk
+
+* Content of the folder
+The file describes the infra structure of the simulations studies of
+the manuscript. This infrastructure is composed of the following
+files/folders:
+- XXXX runs the simulations and export the results
+  (datasets in .rds format in the folder Results).
+- [[./Results]] outputs of the simulation
+- [[./Figures]] figures used in the article and created by [[./figure2.R]],
+  [[./figure3.R]], [[./figure4.R]], [[./figure5.R]]
+- [[./figure2.R]], [[./figure3.R]], [[./figure4.R]], [[./figure5.R]]: R code used to
+  generate figure 2, 3, 4, and 5 of the article.
+- [[./Software]] package lavaSearch2 used to run the simulations.
