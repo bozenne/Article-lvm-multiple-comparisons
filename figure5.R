@@ -42,6 +42,6 @@ gg.power
 ## gg.power + coord_cartesian(ylim = c(0,0.05))
 
 ## * Export
-ggsave(gg.power, filename = file.path("Results","figure5-modelsearch-power.pdf"),
+ggsave(gg.power, filename = file.path("Figures","figure5-modelsearch-power.pdf"),
        height = 12, width = 15)
 
