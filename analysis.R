@@ -11,32 +11,40 @@ library(xtable)
 
 ## * Data management
 ## list.files("Source")
-df <- read.xls(file.path("Source","Input_MANOVA_primaryanalysis.xls"))
-dt <- as.data.table(df)
+if(dir.exists("Source")){
+    ## file.exists(file.path("Source","Input_MANOVA_primaryanalysis.xls"))
+    df <- read.xls(file.path("Source","illustration-real-pet-data.xls"))
+    dt <- as.data.table(df)
+    dt[,X:=NULL]
+    dt[,X.1:=NULL]
 
-## ** only keep relevant columns
-dt[,X:=NULL]
-dt[,X.1:=NULL]
+    old2new <- c("Subject" = "id",
+                 "Genotype..1.HAB.0.MAB." = "genotype",
+                 "Gender..1.M.0.F." = "gender",
+                 "Type..1.concussion.0.healthy." = "group",
+                 "Thalamus" = "thalamus",
+                 "Pallidostriatum" = "pallidostriatum",
+                 "Impact.Region.Neocortex" = "neocortex",
+                 "Midbrain" = "midbrain",
+                 "Pons" = "pons",
+                 "Cingulate.Gyrus" = "cingulateGyrus",             
+                 "Hippocampus...Parahippo" = "hippocampus",
+                 "Supramarginal.Gyrus" = "supramarginalGyrus",
+                 "Corpus.callosum" = "corpusCallosum"
+                 )
 
-old2new <- c("Subject" = "id",
-             "Genotype..1.HAB.0.MAB." = "genotype",
-             "Gender..1.M.0.F." = "gender",
-             "Type..1.concussion.0.healthy." = "group",
-             "Thalamus" = "thalamus",
-             "Pallidostriatum" = "pallidostriatum",
-             "Impact.Region.Neocortex" = "neocortex",
-             "Midbrain" = "midbrain",
-             "Pons" = "pons",
-             "Cingulate.Gyrus" = "cingulateGyrus",             
-             "Hippocampus...Parahippo" = "hippocampus",
-             "Supramarginal.Gyrus" = "supramarginalGyrus",
-             "Corpus.callosum" = "corpusCallosum"
-             )
+    dt <- dt[,.SD,.SDcols = names(old2new)]
+    setnames(dt, old = names(old2new), new = unname(old2new) )
 
-dt <- dt[,.SD,.SDcols = names(old2new)]
-
+}else{
+    
+    warning("The Danish rules on data protection do not allow to freely share person-sensitive health care related data containing any kind of person-identifying information. \n",
+            "Simulated data will therefore be used instead of the real data \n",
+            "Numbers/figures/tables in the article may not be exactly reproduced \n")
+    dt <- readRDS(file.path("Results","illustration-simulated-pet-data.xls"))   
+    
+}
 ## ** rename columns
-setnames(dt, old = names(old2new), new = unname(old2new) )
 dt[,genotype := factor(genotype, levels = 0:1, labels = c("MAB","HAB"))]
 dt[,gender := factor(gender, levels = 0:1, labels = c("Female","Male"))]
 dt[,group := factor(group, levels = 0:1, labels = c("healthy","concussion"))]
@@ -123,7 +131,8 @@ VarCor.stat <- e.search2$sequenceSigma[[1]]
 quantile(abs(VarCor.stat[upper.tri(VarCor.stat)]), probs = c(0,0.025,0.5,0.975,1))
 
 ## ** "benefit" of the max test
-tableS[["adjusted.p.value"]]/tableS[["p.value"]]
+M.tests <- do.call(rbind,lapply(e.search2$sequenceTest, function(iT){iT[NROW(iT),]}))
+M.tests[["adjusted.p.value"]]/M.tests[["p.value"]]
 
 ## ** chi2 test after modelsearch
 gof(e2.lvm)
@@ -148,6 +157,12 @@ ls.pvalue <- list(none = summary(eScan.lvm.glht, test = adjusted("none"))$test,
                   Dunnett = summary(eScan.lvm.glht, test = adjusted("single-step"))$test,
                   DunnettDown = summary(eScan.lvm.glht, test = adjusted("free"))$test
                   )
+## summary(eScan.lvm.glht, test = adjusted("bonferroni"))
+## summary(eScan.lvm.glht, test = adjusted("Shaffer"))
+
 
 range(ls.pvalue[["Dunnett"]][["pvalues"]]/ls.pvalue[["none"]][["pvalues"]])
 min(ls.pvalue$Dunnett$pvalues)
+
+
+## all(eScan.lvm.glht$vcov[rownames(eScan.lvm.glht$linfct),rownames(eScan.lvm.glht$linfct)]>0)

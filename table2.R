@@ -10,8 +10,8 @@ table2[["concussion effect (\\%)"]] <- round(100*(exp(ls.pvalue[[1]][["coefficie
 table2[["statistic"]] <- round(ls.pvalue[[1]][["tstat"]],2)
 table2[["no adjustment"]] <- round(ls.pvalue[["none"]][["pvalues"]],3)
 table2[["Bonferroni"]] <- round(ls.pvalue[["Bonferroni"]][["pvalues"]],3)
-table2[["Dunnett"]] <- round(ls.pvalue[["Dunnett"]][["pvalues"]],3)
-table2[["step-down Dunnett"]] <- round(ls.pvalue[["DunnettDown"]][["pvalues"]],3)
+table2[["max-test"]] <- round(ls.pvalue[["Dunnett"]][["pvalues"]],3)
+table2[["step-down max-test"]] <- round(ls.pvalue[["DunnettDown"]][["pvalues"]],3)
 
 
 addtorow <- list(pos = list(0,0),

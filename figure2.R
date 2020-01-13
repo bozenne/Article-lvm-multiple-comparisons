@@ -4,13 +4,14 @@ library(ggplot2)
 library(ggthemes)
 
 ## * Import
-dt.figure2 <- readRDS(file = file.path("Results","dt-coverageMultComp-article.rds"))
+## list.files("Results")
+dt.figure2 <- readRDS(file = file.path("Results","simulation-figure2.rds"))
 
 ## * Figure 2
 seqN <- levels(dt.figure2$n)
 nN <- length(seqN)
     
-figure2 <- ggplot(dt.figure2,
+figure2 <- ggplot(dt.figure2[method %in% c("none","Bonferroni","Max","none2","Bonferroni2","Max2")],
                   aes(x = medianCor, y = type1, group = n, color = n))
 figure2 <- figure2 + geom_abline(intercept = 0.05, slope = 0, color = "red", size = 1.25)
 figure2 <- figure2 + geom_line(size = 1.25) + geom_point(size = 3)

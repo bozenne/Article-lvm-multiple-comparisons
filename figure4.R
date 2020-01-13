@@ -5,17 +5,17 @@ library(ggthemes)
 
 ## * Import
 ## list.files("Results")
-dt.figure4 <- readRDS(file = file.path("Results","dt-modelsearch-figure4.rds"))
+dt.figure4 <- readRDS(file = file.path("Results","simulation-figure4.rds"))
 
 nameStatistic.lvm <- c(Wald = "No adjustment",
                        Wald.samp = "No adjustment",
                        Wald.wild = "No adjustment",
-                       Wald.bonf = "Adjustment: Bonferroni",
-                       Wald.sampbonf = "Adjustment: Bonferroni",
-                       Wald.wildbonf = "Adjustment: Bonferroni",
-                       Wald.nummax = "Adjustment: max-test",
-                       Wald.wildmax = "Adjustment: max-test",
-                       Wald.sampmax = "Adjustment: max-test")
+                       Wald.bonf = "Bonferroni adjustment",
+                       Wald.sampbonf = "Bonferroni adjustment",
+                       Wald.wildbonf = "Bonferroni adjustment",
+                       Wald.nummax = "Max-test adjustment",
+                       Wald.wildmax = "Max-test adjustment",
+                       Wald.sampmax = "Max-test adjustment")
 maxdist.lvm <- c(Wald = "approximation",
                  Wald.samp = "resampling",
                  Wald.wild = "wild-bootstrap",
