@@ -4,7 +4,6 @@ library(Publish)
 library(ggplot2)
 library(nlme)
 library(gdata)
-library(butils)
 library(lavaSearch2)
 library(multcomp)
 library(xtable)
@@ -44,6 +43,7 @@ if(dir.exists("Source")){
     dt <- readRDS(file.path("Results","illustration-simulated-pet-data.xls"))   
     
 }
+
 ## ** rename columns
 dt[,genotype := factor(genotype, levels = 0:1, labels = c("MAB","HAB"))]
 dt[,gender := factor(gender, levels = 0:1, labels = c("Female","Male"))]
@@ -114,8 +114,11 @@ gg.iid <- gg.iid + geom_histogram()
 gg.iid <- gg.iid + facet_wrap(~region)
 
 ## ** small sample correction
-sCorrect(e2.lvm) <- TRUE
-
+if(packageVersion("lavaSearch2")>="2.0.0"){
+    e2.lvm <- estimate2(e2.lvm)
+}else{
+    sCorrect(e2.lvm) <- TRUE
+}
 ## * Results for section 6
 ## ** number of brain regions
 length(endogenous(e2.lvm))
@@ -139,10 +142,17 @@ gof(e2.lvm)
 ## qqplot2(e2.lvm)
 
 ## ** multivariate test of the concussion effect
-outC <- createContrast(e2.lvm, var.test = "group")
-outConcussion <- compare2(e2.lvm, contrast =  outC$contrast, null = outC$null)
-outConcussion[["estimate"]] <- outConcussion[["estimate"]][,1,drop=FALSE] ## hide unadjusted p-values
+if(packageVersion("lavaSearch2")>="2.0.0"){
+    outConcussion <- compare2(e2.lvm, linfct =  "groupconcussion")
+    outConcussion2 <- compare2(e2.lvm, linfct =  "groupconcussion", as.lava = FALSE)
+}else{
+    outC <- createContrast(e2.lvm, var.test = "group")
+    outConcussion <- compare2(e2.lvm, contrast =  outC$contrast, null = outC$null)
+}
+outConcussion[["estimate"]] <- outConcussion[["estimate"]][,1,drop=FALSE] ## hide unadjusted confidence intervals
 outConcussion
+## summary(outConcussion2) ## adjusted CI
+
 
 ## ** covariance between the Wald statistics of the concussion effect
 eScan.lvm.glht <- glht2(e2.lvm, linfct = outC$contrast, rhs = outC$null)
