@@ -62,7 +62,7 @@ latent(m.sim) <- ~confounder
 ## * loop
 dt.res <- NULL
 
-for(iN in 1:n.N){ # iN <- 1
+for(iN in 1:n.N){ # iN <- 5
     for(iCor in 1:n.Cor){ # iCor <- 3
         cat("sample size=",seqN[iN],", correlation=",seqCor[iCor],": ", sep = "")
         n.tempo <- seqN[iN]

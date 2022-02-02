@@ -3,20 +3,20 @@ library(data.table)
 library(Publish)
 library(ggplot2)
 library(nlme)
-library(gdata)
+library(readxl)
 library(lavaSearch2)
 library(multcomp)
 library(xtable)
+library(microbenchmark)
 
 ## * Data management
 ## list.files("Source")
 if(dir.exists("Source")){
-    ## file.exists(file.path("Source","Input_MANOVA_primaryanalysis.xls"))
-    df <- read.xls(file.path("Source","illustration-real-pet-data.xls"))
-    dt <- as.data.table(df)
+    df <- read.csv(file.path("Source","illustration-real-pet-data.csv"), header = TRUE, sep = ";", dec = ",", na.string = "")
+    dt <- as.data.table(df[rowSums(!is.na(df))>0,])
     dt[,X:=NULL]
     dt[,X.1:=NULL]
-
+    
     old2new <- c("Subject" = "id",
                  "Genotype..1.HAB.0.MAB." = "genotype",
                  "Gender..1.M.0.F." = "gender",
@@ -40,7 +40,7 @@ if(dir.exists("Source")){
     warning("The Danish rules on data protection do not allow to freely share person-sensitive health care related data containing any kind of person-identifying information. \n",
             "Simulated data will therefore be used instead of the real data \n",
             "Numbers/figures/tables in the article may not be exactly reproduced \n")
-    dt <- readRDS(file.path("Results","illustration-simulated-pet-data.xls"))   
+    dt <- readRDS(file.path("Results","illustration-simulated-pet-data.rds"))   
     
 }
 
@@ -93,8 +93,6 @@ set.seed(10)
 system.time(
     e.search2  <- modelsearch2(e0.lvm, link = allNewLinks, alpha = 0.15)
 )
-## summary(e.search2)
-
 
 ## ** final fit
 ## methods(class = class(e.search2))
@@ -175,4 +173,78 @@ range(ls.pvalue[["Dunnett"]][["pvalues"]]/ls.pvalue[["none"]][["pvalues"]])
 min(ls.pvalue$Dunnett$pvalues)
 
 
-## all(eScan.lvm.glht$vcov[rownames(eScan.lvm.glht$linfct),rownames(eScan.lvm.glht$linfct)]>0)
+## * Data splitting
+if(FALSE){
+    dtBin <- copy(dt)
+    dtBin$group <- as.numeric(dtBin$group=="concussion")
+    dtBin$genotype <- as.numeric(dtBin$genotype=="HAB")
+
+    mBin.lvm <- m0.lvm
+    covariance(mBin.lvm) <- log.neocortex ~ log.supramarginalGyrus
+
+    vec.coef <- paste0("log.",c("thalamus", "pallidostriatum", "neocortex", "midbrain", "pons", "cingulateGyrus", "hippocampus", "supramarginalGyrus", "corpusCallosum"), "~group")
+
+    ## ** usage A
+    runAnalysisSplit <- function(p, trace = FALSE){ ## p <- 0.5
+    
+        iIndexTrain <- sample.int(n = NROW(dtBin), size = round(p*NROW(dt)))
+        iIndexTest <- setdiff(1:NROW(dtBin), iIndexTrain)
+        iDataTrain <- dtBin[iIndexTrain]
+        iDataTest <- dtBin[iIndexTest]
+    
+        iE.lvm <- estimate(mBin.lvm, data = iDataTrain)
+        indexTest <- which.min(summary(iE.lvm)$coef[vec.coef,"P-value"])
+        
+        iT.lvm <- estimate(mBin.lvm, data = iDataTest)
+        return(summary(iE.lvm)$coef[vec.coef[indexTest],,drop=FALSE])
+
+    }
+
+    set.seed(10)
+    ls.split05 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.5)})
+    ls.split04 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.4)})
+    ls.split03 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.3)})
+
+    ## df.split <- data.table(coef = rownames(do.call(rbind,ls.split05)), p = 0.5, do.call(rbind,ls.split05))
+    df.split <- rbind(data.table(coef = rownames(do.call(rbind,ls.split05)), p = 0.5, do.call(rbind,ls.split05)),
+                      data.table(coef = rownames(do.call(rbind,ls.split04)), p = 0.4, do.call(rbind,ls.split04)),
+                      data.table(coef = rownames(do.call(rbind,ls.split03)), p = 0.3, do.call(rbind,ls.split03)))
+
+    setnames(df.split, old = "P-value", new = "p.value")
+    ggSplit <- ggplot(df.split, aes(x = coef, y = p.value)) + facet_wrap(~p)
+    ggSplit <- ggSplit + geom_boxplot()
+    ggSplit
+
+    ## ** usage B
+    estimate.lvm <- lava:::estimate.lvm
+    runAnalysisSplit <- function(p, trace = FALSE){
+        iIndexTrain <- sample.int(n = NROW(dtBin), size = round(p*NROW(dt)))
+        iIndexTest <- setdiff(1:NROW(dtBin), iIndexTrain)
+        iDataTrain <- dtBin[iIndexTrain]
+        iDataTest <- dtBin[iIndexTest]
+    
+        iE.lvm <- estimate(m0.lvm, data = iDataTrain)
+        iE.search2  <- modelsearch2(iE.lvm, link = allNewLinks, alpha = 0.05, trace = trace)
+        iSelected <- which(summary(iE.search2, print = FALSE)$table$selected)
+        if(length(iSelected)>0){
+            iE2.lvm <- update(getNewModel(iE.search2), data = dt[iIndexTest])
+        }else{
+            iE2.lvm <- iE.lvm
+        }
+        iC <- createContrast(iE2.lvm, var.test = "group")
+        return(glht2(iE2.lvm, linfct = iC$contrast, rhs = iC$null))
+    }
+
+    set.seed(10)
+    ls.split05 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.5)})
+    ls.split04 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.4)})
+    ls.split03 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.3)})
+
+
+    M.pvalues05 <- do.call(rbind,lapply(ls.split05, function(iSplit){summary(iSplit)$test$pvalues}))
+    M.pvalues05
+    M.pvalues04 <- do.call(rbind,lapply(ls.split04, function(iSplit){summary(iSplit)$test$pvalues}))
+    M.pvalues04
+    M.pvalues03 <- do.call(rbind,lapply(ls.split03, function(iSplit){summary(iSplit)$test$pvalues}))
+    M.pvalues03
+}

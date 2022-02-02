@@ -96,8 +96,22 @@ dt.type1.fig4 <- dt.long.fig4[,.(n.rep=.N,
 dt.type1.fig4[, a := as.factor(a)]
 dt.type1.fig4[, n := as.factor(n)]
 
+dt.long.timing <- melt(dt.all.fig4, id.vars = c("n","a","rep","seed","iFile","medianCor"),
+                       measure.vars = c("tps","tps.samp","tps.wild"),
+                       variable.name = "method",
+                       value.name = "time")
+dt.long.timing[, method := factor(method, c("tps", "tps.samp", "tps.wild"), c("approximation","sample","bootstrap"))]
+dtS.long.timing <- dt.long.timing[,.(n.rep=.N,
+                                     medianCor=median(medianCor),
+                                     time.median=median(time,na.rm =TRUE),
+                                     time.q05=quantile(time,0.05,na.rm =TRUE),
+                                     time.q95=quantile(time,0.95,na.rm =TRUE)
+                                     ),
+                                  by = c("n","a","method")]
+
 ## ** export
 saveRDS(dt.type1.fig4, file = "Results/simulation-figure4.rds")
+saveRDS(dtS.long.timing, file = "Results/simulation-timing.rds")
 
 ## * Score, power (figure 5)
 ## ** load file
