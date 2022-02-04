@@ -214,6 +214,9 @@ if(FALSE){
     ggSplit <- ggplot(df.split, aes(x = coef, y = p.value)) + facet_wrap(~p)
     ggSplit <- ggSplit + geom_boxplot()
     ggSplit
+    ## table(df.split$coef)
+    ## median(df.split$p.value)
+
 
     ## ** usage B
     estimate.lvm <- lava:::estimate.lvm
@@ -236,9 +239,9 @@ if(FALSE){
     }
 
     set.seed(10)
-    ls.split05 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.5)})
-    ls.split04 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.4)})
-    ls.split03 <- pbapply::pblapply(1:10,function(i){runAnalysisSplit(0.3)})
+    ls.split05 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.5)})
+    ls.split04 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.4)})
+    ls.split03 <- pbapply::pblapply(1:100,function(i){runAnalysisSplit(0.3)})
 
 
     M.pvalues05 <- do.call(rbind,lapply(ls.split05, function(iSplit){summary(iSplit)$test$pvalues}))
